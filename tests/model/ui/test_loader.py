@@ -4,7 +4,7 @@ from textwrap import dedent
 
 from vpy.interfaces.uikit import WidgetClassFactory
 from vpy.model.ui.base import Widget
-from vpy.model.ui.loader import Loader
+from vpy.model.ui.loader import Loader, LoaderError
 
 
 class TestLoader(unittest.TestCase):
@@ -15,7 +15,9 @@ class TestLoader(unittest.TestCase):
         self.wgt_cls.return_value = self.widget1
 
         self.cls_factory = create_autospec(WidgetClassFactory)
-        self.cls_factory.return_value = self.wgt_cls
+        self.cls_factory.side_effect = {
+            "WgtCls": self.wgt_cls
+        }.get
         
         self.load = Loader(get_class=self.cls_factory)
     
@@ -28,9 +30,32 @@ class TestLoader(unittest.TestCase):
         )
         expected = self.widget1
         
-        out = self.load(ui_def_str)
+        out = self.load(ui_def_str.splitlines())
         
-        self.cls_factory.assert_called_with("WgtCls")
+        self.cls_factory.assert_called_once_with("WgtCls")
+        self.wgt_cls.assert_called_once_with(name="Widget1")
+        self.assertEqual(expected, out)
+
+    def test_invalid_config_detected(self):
+        invalid_configs = [
+            (
+                "No class def",
+                """\
+                [Widget1]
+                """
+            ),
+            (
+                "Non existant class",
+                """\
+                [Widget1]
+                class: NoSuchClass
+                """
+            ),
+        ]
+        for st_name, invalid_config in invalid_configs:
+            with self.subTest(st_name):
+                with self.assertRaises(LoaderError):
+                    self.load(invalid_config.splitlines())
 
 
 if __name__ == "__main__":
