@@ -11,7 +11,7 @@ class TestLoader(unittest.TestCase):
     def setUp(self):
         self.widget1 = create_autospec(Widget, instance=True)
         
-        self.wgt_cls = create_autospec(Widget)
+        self.wgt_cls = create_autospec(Widget, wraps=Widget)
         self.wgt_cls.return_value = self.widget1
 
         self.cls_factory = create_autospec(WidgetClassFactory)
@@ -26,6 +26,8 @@ class TestLoader(unittest.TestCase):
             """\
             [Widget1]
             class: WgtCls
+            grid_row: 1
+            grid_column: 1
             """
         )
         expected = self.widget1
@@ -33,7 +35,11 @@ class TestLoader(unittest.TestCase):
         out = self.load(ui_def_str.splitlines())
         
         self.cls_factory.assert_called_once_with("WgtCls")
-        self.wgt_cls.assert_called_once_with(name="Widget1")
+        self.wgt_cls.assert_called_once_with(
+            name="Widget1",
+            grid_row=1,
+            grid_column=1,
+        )
         self.assertEqual(expected, out)
 
     def test_invalid_config_detected(self):

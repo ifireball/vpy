@@ -1,4 +1,4 @@
-from dataclasses import dataclass
+from dataclasses import dataclass, fields
 from collections.abc import Iterable
 from configparser import ConfigParser, SectionProxy
 import re
@@ -25,7 +25,12 @@ class Loader:
 
     def _load_widget(self, section: str, items: SectionProxy) -> Widget:
             cls = self._get_wgt_cls(section, items)
-            widget = cls(name=section)
+            wgt_cfg = {}
+            for field in fields(cls):
+                if field.name not in items:
+                    continue
+                wgt_cfg[field.name] = items.getint(field.name)
+            widget = cls(name=section, **wgt_cfg)
             return widget
 
     def _get_wgt_cls(self, section: str, items: SectionProxy) -> type(Widget):
