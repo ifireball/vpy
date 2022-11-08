@@ -3,15 +3,15 @@ from unittest.mock import create_autospec
 from textwrap import dedent
 
 from vpy.interfaces.uikit import WidgetClassFactory
-from vpy.model.ui.base import Widget
+from vpy.model.ui.widgets import Button
 from vpy.model.ui.loader import Loader, LoaderError
 
 
 class TestLoader(unittest.TestCase):
     def setUp(self):
-        self.widget1 = create_autospec(Widget, instance=True)
+        self.widget1 = create_autospec(Button, instance=True)
         
-        self.wgt_cls = create_autospec(Widget, wraps=Widget)
+        self.wgt_cls = create_autospec(Button, wraps=Button)
         self.wgt_cls.return_value = self.widget1
 
         self.cls_factory = create_autospec(WidgetClassFactory)
@@ -32,6 +32,7 @@ class TestLoader(unittest.TestCase):
             stick_east: Yes
             stick_south: False
             stick_west: No
+            text: Big, red button!
             """
         )
         expected = self.widget1
@@ -47,6 +48,7 @@ class TestLoader(unittest.TestCase):
             stick_east=True,
             stick_south=False,
             stick_west=False,
+            text="Big, red button!"
         )
         self.assertEqual(expected, out)
 

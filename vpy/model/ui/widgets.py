@@ -1,8 +1,8 @@
 from dataclasses import dataclass
 
-from .abc import Widget
+from .base import Widget
 
 
-@dataclass(wk_only=True)
+@dataclass(kw_only=True)
 class Button(Widget):
-    text: str
+    text: str = "Click me!"

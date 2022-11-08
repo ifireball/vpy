@@ -39,6 +39,8 @@ class Loader:
             return items.getint(field.name)
         elif issubclass(bool, field.type):
             return items.getboolean(field.name)
+        elif issubclass(str, field.type):
+            return items.get(field.name)
         else:
             raise TypeError(f"Unsupported Widget field type: {field.type}")
 
