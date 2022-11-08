@@ -35,12 +35,20 @@ class Loader:
 
     @staticmethod
     def _data_for_field(field: Field, items: SectionProxy) -> object:
-        if issubclass(int, field.type):
-            return items.getint(field.name)
-        elif issubclass(bool, field.type):
-            return items.getboolean(field.name)
-        elif issubclass(str, field.type):
-            return items.get(field.name)
+        types_and_getters = {
+            int: items.getint,
+            bool: items.getboolean,
+            str: items.get,
+        }
+        for type_, getter in types_and_getters.items():
+            if issubclass(type_, field.type):
+                try:
+                    return getter(field.name)
+                except ValueError:
+                    raise LoaderError(
+                        f"Invalid {type_.__name__} value "
+                        f"for {items.name}.{field.name}"
+                    )
         else:
             raise TypeError(f"Unsupported Widget field type: {field.type}")
 

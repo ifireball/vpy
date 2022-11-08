@@ -58,19 +58,39 @@ class TestLoader(unittest.TestCase):
                 "No class def",
                 """\
                 [Widget1]
-                """
+                """,
+                "^Widget class not specified for 'Widget1'$"
             ),
             (
                 "Non existant class",
                 """\
                 [Widget1]
                 class: NoSuchClass
-                """
+                """,
+                "Invalid widget class: 'NoSuchClass'"
+            ),
+            (
+                "Bad int value",
+                """\
+                [Widget1]
+                class: WgtCls
+                grid_column: A
+                """,
+                "Invalid int value for Widget1.grid_column"
+            ),
+            (
+                "Bad bool value",
+                """\
+                [Widget1]
+                class: WgtCls
+                stick_north: absolutely not!
+                """,
+                "Invalid bool value for Widget1.stick_north"
             ),
         ]
-        for st_name, invalid_config in invalid_configs:
+        for st_name, invalid_config, err_re in invalid_configs:
             with self.subTest(st_name):
-                with self.assertRaises(LoaderError):
+                with self.assertRaisesRegex(LoaderError, err_re):
                     self.load(invalid_config.splitlines())
 
 
