@@ -28,6 +28,10 @@ class TestLoader(unittest.TestCase):
             class: WgtCls
             grid_row: 1
             grid_column: 1
+            stick_north: True
+            stick_east: Yes
+            stick_south: False
+            stick_west: No
             """
         )
         expected = self.widget1
@@ -39,6 +43,10 @@ class TestLoader(unittest.TestCase):
             name="Widget1",
             grid_row=1,
             grid_column=1,
+            stick_north=True,
+            stick_east=True,
+            stick_south=False,
+            stick_west=False,
         )
         self.assertEqual(expected, out)
 
