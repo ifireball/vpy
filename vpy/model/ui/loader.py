@@ -17,11 +17,16 @@ class Loader:
     
     def __call__(self, stream: Iterable[str]) -> Widget:
         cfg = self._parse_stream(stream)
+        root_widget = None
         for section, items in cfg.items():
             if section == ".default":
                 continue
             widget = self._load_widget(section, items)
-            return widget
+            if root_widget is None:
+                root_widget = widget
+            else:
+                root_widget.children.append(widget)
+        return root_widget
 
     def _load_widget(self, section: str, items: SectionProxy) -> Widget:
             cls = self._get_wgt_cls(section, items)

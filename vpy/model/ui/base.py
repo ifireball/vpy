@@ -4,7 +4,7 @@ but Python does not seem to allow something to be both a
 dataclass and a Protocol at the same time, while ABCs do not
 prevent instanciation where there are no abstract methods.
 """
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from abc import ABCMeta
 
 
@@ -30,4 +30,4 @@ class Widget(metaclass=ABCMeta):
 
 @dataclass(kw_only=True)
 class WidgetContainer(Widget, metaclass=ABCMeta):
-    children: list[Widget]
+    children: list[Widget] = field(default_factory=list)

@@ -4,6 +4,7 @@ from textwrap import dedent
 
 from vpy.interfaces.uikit import WidgetClassFactory
 from vpy.model.ui.widgets import Button
+from vpy.model.ui.layout_widgets import Frame
 from vpy.model.ui.loader import Loader, LoaderError
 
 
@@ -14,9 +15,16 @@ class TestLoader(unittest.TestCase):
         self.wgt_cls = create_autospec(Button, wraps=Button)
         self.wgt_cls.return_value = self.widget1
 
+        self.lay_widget1 = create_autospec(Frame, instance=True)
+        self.lay_widget1.children = []
+
+        self.lay_wgt_cls = create_autospec(Frame, wraps=Frame)
+        self.lay_wgt_cls.return_value = self.lay_widget1
+
         self.cls_factory = create_autospec(WidgetClassFactory)
         self.cls_factory.side_effect = {
-            "WgtCls": self.wgt_cls
+            "WgtCls": self.wgt_cls,
+            "LayWgtCls": self.lay_wgt_cls,
         }.get
         
         self.load = Loader(get_class=self.cls_factory)
@@ -51,6 +59,25 @@ class TestLoader(unittest.TestCase):
             text="Big, red button!"
         )
         self.assertEqual(expected, out)
+
+    def test_read_widget_in_layout(self):
+        out = self.load(dedent(
+            """\
+            [LayWidget1]
+            class: LayWgtCls
+
+            [Widget1]
+            class: WgtCls
+            parent: LayWidget1
+            """
+        ).splitlines())
+        
+        self.lay_wgt_cls.assert_called_once_with(name="LayWidget1")
+        self.assertEqual(self.lay_widget1, out)
+
+        self.wgt_cls.assert_called_once_with(name="Widget1")
+
+        self.assertEqual(out.children, [self.widget1])
 
     def test_invalid_config_detected(self):
         invalid_configs = [
