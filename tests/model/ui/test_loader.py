@@ -1,6 +1,7 @@
 import unittest
 from unittest.mock import create_autospec
 from textwrap import dedent
+from itertools import permutations
 
 from vpy.interfaces.uikit import WidgetClassFactory
 from vpy.model.ui.widgets import Button
@@ -10,10 +11,14 @@ from vpy.model.ui.loader import Loader, LoaderError
 
 class TestLoader(unittest.TestCase):
     def setUp(self):
-        self.widget1 = create_autospec(Button, instance=True)
+        self.widget1 = Button(name="Widget1")
+        self.widget2 = Button(name="Widget2")
         
         self.wgt_cls = create_autospec(Button, wraps=Button)
-        self.wgt_cls.return_value = self.widget1
+        self.wgt_cls.side_effect = lambda **kwargs: {
+                "Widget1": self.widget1,
+                "Widget2": self.widget2,
+        }[kwargs["name"]]
 
         self.lay_widget1 = create_autospec(Frame, instance=True)
         self.lay_widget1.children = []
@@ -96,6 +101,51 @@ class TestLoader(unittest.TestCase):
                 self.wgt_cls.assert_called_once_with(name="Widget1")
 
                 self.assertEqual(out.children, [self.widget1])
+                
+    def test_read_widgets_in_layout(self):
+        cfg_sections = [
+            """\
+            [LayWidget1]
+            class: LayWgtCls""",
+            """\
+            [Widget1]
+            class: WgtCls
+            parent: LayWidget1""",
+            """\
+            [Widget2]
+            class: WgtCls
+            parent: LayWidget1""",
+        ]
+        exp_sct_child = [
+            None,
+            self.widget1,
+            self.widget2,
+        ]
+        
+        configs = (
+            dedent("\n".join(cfg_sections_p)).splitlines()
+            for cfg_sections_p in permutations(cfg_sections)
+        )
+        exp_child_lists = (
+            list(filter(bool, exp_sct_child_p))
+            for exp_sct_child_p in permutations(exp_sct_child)
+        )
+
+        for config, exp_children in zip(configs, exp_child_lists):
+            with self.subTest():
+                self.setUp()
+                out = self.load(config)
+        
+                self.lay_wgt_cls.assert_called_once_with(name="LayWidget1")
+                self.assertEqual(self.lay_widget1, out)
+
+                self.wgt_cls.assert_any_call(name="Widget1")
+                self.wgt_cls.assert_any_call(name="Widget2")
+                self.assertEqual(2, self.wgt_cls.call_count)
+
+                self.assertEqual(out.children, exp_children)
+                 
+
 
     def test_invalid_config_detected(self):
         invalid_configs = [
