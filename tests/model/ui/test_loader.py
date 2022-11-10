@@ -1,6 +1,7 @@
 import unittest
 from unittest.mock import create_autospec
 from textwrap import dedent
+from itertools import permutations, join
 
 from vpy.interfaces.uikit import WidgetClassFactory
 from vpy.model.ui.widgets import Button
@@ -96,6 +97,19 @@ class TestLoader(unittest.TestCase):
                 self.wgt_cls.assert_called_once_with(name="Widget1")
 
                 self.assertEqual(out.children, [self.widget1])
+                
+    def text_read_widgets_in_layout(self):
+        cfg_sections = [
+            """[LayWidget1]
+            class: LayWgtCls""",
+            """[Widget1]
+            class: WgtCls
+            parent: LayWidget1""",
+            """[Widget2]
+            class: WgtCls
+            parent: LayWidget1""",
+        ]
+
 
     def test_invalid_config_detected(self):
         invalid_configs = [
