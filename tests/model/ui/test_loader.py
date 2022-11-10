@@ -61,23 +61,41 @@ class TestLoader(unittest.TestCase):
         self.assertEqual(expected, out)
 
     def test_read_widget_in_layout(self):
-        out = self.load(dedent(
-            """\
-            [LayWidget1]
-            class: LayWgtCls
+        configs = [
+            (
+                "In order",
+                """\
+                [LayWidget1]
+                class: LayWgtCls
 
-            [Widget1]
-            class: WgtCls
-            parent: LayWidget1
-            """
-        ).splitlines())
+                [Widget1]
+                class: WgtCls
+                parent: LayWidget1
+                """
+            ),
+            (
+                "Out of order",
+                """\
+                [Widget1]
+                class: WgtCls
+                parent: LayWidget1
+
+                [LayWidget1]
+                class: LayWgtCls            
+                """
+            )
+        ]
+        for name, config in configs:
+            with self.subTest(name):
+                self.setUp()
+                out = self.load(dedent(config).splitlines())
         
-        self.lay_wgt_cls.assert_called_once_with(name="LayWidget1")
-        self.assertEqual(self.lay_widget1, out)
+                self.lay_wgt_cls.assert_called_once_with(name="LayWidget1")
+                self.assertEqual(self.lay_widget1, out)
 
-        self.wgt_cls.assert_called_once_with(name="Widget1")
+                self.wgt_cls.assert_called_once_with(name="Widget1")
 
-        self.assertEqual(out.children, [self.widget1])
+                self.assertEqual(out.children, [self.widget1])
 
     def test_invalid_config_detected(self):
         invalid_configs = [
