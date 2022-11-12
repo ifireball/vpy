@@ -13,18 +13,25 @@ class TestLoader(unittest.TestCase):
     def setUp(self):
         self.widget1 = Button(name="Widget1")
         self.widget2 = Button(name="Widget2")
+        self.widget3 = Button(name="Widget3")
         
         self.wgt_cls = create_autospec(Button, wraps=Button)
         self.wgt_cls.side_effect = lambda **kwargs: {
                 "Widget1": self.widget1,
                 "Widget2": self.widget2,
+                "Widget3": self.widget3,
         }[kwargs["name"]]
 
-        self.lay_widget1 = create_autospec(Frame, instance=True)
-        self.lay_widget1.children = []
+        self.lay_widget1 = Frame(name="LayWidget1")
+        self.lay_widget2 = Frame(name="LayWidget2")
+        self.lay_widget3 = Frame(name="LayWidget3")
 
         self.lay_wgt_cls = create_autospec(Frame, wraps=Frame)
-        self.lay_wgt_cls.return_value = self.lay_widget1
+        self.lay_wgt_cls.side_effect = lambda **kwargs: {
+                "LayWidget1": self.lay_widget1,
+                "LayWidget2": self.lay_widget2,
+                "LayWidget3": self.lay_widget3,
+        }[kwargs["name"]]
 
         self.cls_factory = create_autospec(WidgetClassFactory)
         self.cls_factory.side_effect = {
@@ -145,6 +152,52 @@ class TestLoader(unittest.TestCase):
 
                 self.assertEqual(out.children, exp_children)
                  
+    def test_nested_layouts(self):
+        cfg_sections = [
+            """\
+            [LayWidget1]
+            class: LayWgtCls""",
+            """\
+            [LayWidget2]
+            class: LayWgtCls
+            parent: LayWidget1
+            [LayWidget3]
+            class: LayWgtCls
+            parent: LayWidget1""",
+            """\
+            [Widget1]
+            class: WgtCls
+            parent: LayWidget2""",
+            """\
+            [Widget2]
+            class: WgtCls
+            parent: LayWidget3
+            [Widget3]
+            class: WgtCls
+            parent: LayWidget3""",
+        ]
+        configs = (
+            dedent("\n".join(cfg_sections_p)).splitlines()
+            for cfg_sections_p in permutations(cfg_sections)
+        )
+        expected = Frame(
+            name="LayWidget1",
+            children=[
+                Frame(
+                    name="LayWidget2",
+                    children=[Button(name="Widget1")],
+                ),
+                Frame(
+                    name="LayWidget3",
+                    children=[Button(name="Widget2"), Button(name="Widget3")],
+                ),
+            ],
+        )
+        for config in configs:
+            with self.subTest():
+                self.setUp()
+                out = self.load(config)
+                self.assertEqual(expected, out)
 
 
     def test_invalid_config_detected(self):
