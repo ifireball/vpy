@@ -38,7 +38,14 @@ class Loader:
                              .setdefault(items["parent"], [])\
                              .append(widget)
             else:
-                root_widget = widget
+                if root_widget is None:
+                    root_widget = widget
+                else:
+                    raise LoaderError(
+                        f"Attempt to set '{widget.name}' as root"
+                        f" while '{root_widget.name}' is already"
+                        " set as such"
+                    )
         if root_widget is None:
             raise LoaderError("Root widget not found!")
         return root_widget, widget_namespace, children_map
@@ -49,7 +56,18 @@ class Loader:
         children_map: dict[str, list[Widget]]
     ) -> None:
         for parent_name, children in children_map.items():
-            parent = widget_namespace[parent_name]
+            parent = widget_namespace.get(parent_name)
+            if parent is None:
+                raise LoaderError(
+                    f"Could not find '{parent_name}' the"
+                    f" parent of '{children[0].name}'"
+                )
+            if not hasattr(parent, "children"):
+                raise LoaderError(
+                    f"'{parent_name}' set as parent of "
+                    f"'{children[0].name}', but its not a"
+                    " container"
+                )
             parent.children = children
 
     def _load_widget(self, section: str, items: SectionProxy) -> Widget:

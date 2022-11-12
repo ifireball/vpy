@@ -244,6 +244,39 @@ class TestLoader(unittest.TestCase):
                 """,
                 "Root widget not found"
             ),
+            (
+                "More then one root",
+                """\
+                [Widget1]
+                class: WgtCls
+                [Widget2]
+                class: WgtCls
+                """,
+                "Attempt to set 'Widget2' as root while 'Widget1' is"
+                " already set as such"
+            ),
+            (
+                "Missing parent",
+                """\
+                [Widget1]
+                class: WgtCls
+                parent: NoSuchWgt
+                [Widget2]
+                class: WgtCls
+                """,
+                "Could not find 'NoSuchWgt' the parent of 'Widget1'"
+            ),
+            (
+                "Parent is not a container",
+                """\
+                [Widget1]
+                class: WgtCls
+                parent: Widget2
+                [Widget2]
+                class: WgtCls
+                """,
+                "'Widget2' set as parent of 'Widget1', but its not a container"
+            ),
         ]
         for st_name, invalid_config, err_re in invalid_configs:
             with self.subTest(st_name):
