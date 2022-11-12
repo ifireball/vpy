@@ -16,6 +16,14 @@ class Loader:
     get_class: WidgetClassFactory
     
     def __call__(self, stream: Iterable[str]) -> Widget:
+        root_widget, widget_namespace, children_map = \
+            self._load_widgets(stream)
+        self._build_tree(widget_namespace, children_map)
+        return root_widget
+
+    def _load_widgets(
+        self, stream: Iterable[str]
+    ) -> tuple[Widget, dict[str, Widget], dict[str, list[Widget]]]:
         cfg = self._parse_stream(stream)
         root_widget = None
         widget_namespace = {}
@@ -31,10 +39,18 @@ class Loader:
                              .append(widget)
             else:
                 root_widget = widget
+        if root_widget is None:
+            raise LoaderError("Root widget not found!")
+        return root_widget, widget_namespace, children_map
+
+    def _build_tree(
+        self, 
+        widget_namespace: dict[str, Widget], 
+        children_map: dict[str, list[Widget]]
+    ) -> None:
         for parent_name, children in children_map.items():
             parent = widget_namespace[parent_name]
             parent.children = children
-        return root_widget
 
     def _load_widget(self, section: str, items: SectionProxy) -> Widget:
             cls = self._get_wgt_cls(section, items)

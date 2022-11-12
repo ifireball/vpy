@@ -235,6 +235,15 @@ class TestLoader(unittest.TestCase):
                 """,
                 "Invalid bool value for Widget1.stick_north"
             ),
+            (
+                "Missing root",
+                """\
+                [Widget1]
+                class: WgtCls
+                parent: NoSuchWgt
+                """,
+                "Root widget not found"
+            ),
         ]
         for st_name, invalid_config, err_re in invalid_configs:
             with self.subTest(st_name):
