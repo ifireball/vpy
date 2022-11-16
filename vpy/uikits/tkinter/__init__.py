@@ -1,5 +1,6 @@
 from typing import Final
 from collections.abc import Mapping
+from textwrap import dedent
 
 from vpy.interfaces.uikit import UiKit
 from vpy.model.ui.base import Widget
@@ -19,4 +20,26 @@ class TkInterKit(UiKit):
         return self.WIDGET_CLASSES.get(class_name)
 
     def compile_user_class_dec(self, model: Widget) -> str:
-        pass
+        generated_code = dedent(
+            """\
+            import tkinter as tk
+            import tkinter.ttk as ttk
+            from typing import TypeVar
+            """
+        )
+        ( # this is for later...
+            """\
+            _CT = TypeVar("_CT", bound=tk.Misc)
+
+            def decorate_class(cls: _CT) -> _CT:
+                def _new_init(self, parent: tk.Misc|None = None, **options):
+                    config = {}
+                    config.update(options)
+                    super(cls, self).__init__(parent, **config)
+
+                cls.__init__ = _new_init
+                cls.__init__.__qualname__ = f"{cls.__qualname__}.__init__"
+                return cls
+            """
+        )
+        return generated_code

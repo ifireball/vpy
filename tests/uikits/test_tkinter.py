@@ -1,4 +1,5 @@
 import unittest
+from unittest.mock import Mock, call
 from textwrap import dedent
 
 from vpy.model.ui.widgets import Button
@@ -21,25 +22,25 @@ class TestTkInterCompiler(unittest.TestCase):
 
     def test_compile_top_frame(self):
         model = self.frame_cls(name="Frame1")
-        expected = dedent(
-            """\
-            import tkinter as tk
-            import tkinter.ttk as ttk
-            from typing import TypeVar
 
-            _CT = TypeVar("_CT", bound=tk.Misc)
+        result_code = self.uikit.compile_user_class_dec(model)
 
-            def decorate_class(cls: _CT) -> _CT:
-                def _new_init(self, parent: tk.Misc|None = None, **options):
-                    config = {}
-                    config.update(options)
-                    super(cls, self).__init__(parent, **config)
+        mock_import = Mock()
+        mock_globals = {"__builtins__": {"__import__": mock_import}}
+        exec(result_code, mock_globals)
 
-                cls.__init__ = _new_init
-                cls.__init__.__qualname__ = f"{cls.__qualname__}.__init__"
-                return cls
-            """
+        self.assertEqual(mock_import.call_count, 3)
+        mock_import.assert_has_calls(
+            [
+                call('tkinter', mock_globals, mock_globals, None, 0),
+                call('tkinter.ttk', mock_globals, mock_globals, None, 0),
+                call('typing', mock_globals, mock_globals, ('TypeVar',), 0)
+            ],
+            any_order=False
         )
+
+        self.assertIsNotNone(tk := mock_globals.get("tk"))
+        self.assertIsNotNone(ttk := mock_globals.get("ttk"))
 
 
 if __name__ == "__main__":
