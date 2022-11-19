@@ -25,6 +25,15 @@ class TkInterKit(UiKit):
             import tkinter as tk
             import tkinter.ttk as ttk
             from typing import TypeVar
+
+            _CT = TypeVar("_CT", bound=tk.Misc)
+
+            def decorate_class(cls: _CT) -> _CT:
+                def _new_init(self, parent: tk.Misc|None = None):
+                    super(cls, self).__init__(parent)
+                    
+                cls.__init__ = _new_init
+                return cls
             """
         )
         ( # this is for later...
